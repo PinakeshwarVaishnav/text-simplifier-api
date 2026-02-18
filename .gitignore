@@ -1,0 +1,13 @@
+# Environment
+.env
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Uploads (don't commit user files)
+uploads/*
+!uploads/.gitkeep
+
+# IDE
+.vscode/
