@@ -1,8 +1,9 @@
+import os
 import time
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, UploadFile, File, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from services.ocr_service import extract_text
@@ -32,10 +33,17 @@ app.add_middleware(
 )
 
 # Serve frontend — only if static folder exists
-import os
+
 
 if os.path.exists("static"):
     app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Redirect the root (/) to frontend
+
+
+@app.get("/")
+async def read_index():
+    return RedirectResponse(url="/static/index.html")
 
 
 # -------------------------------------------------------------------

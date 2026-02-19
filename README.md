@@ -2,6 +2,7 @@
 title: FastAPI OCR Backend
 sdk: docker
 app_port: 7860
+base_path: /
 ---
 
 # Text Simplifier API
