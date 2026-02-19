@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Text Simplifier</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: #f0f4f8;
+        color: #333;
+      }
+      .container {
+        max-width: 760px;
+        margin: 60px auto;
+        background: white;
+        border-radius: 12px;
+        padding: 40px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      }
+      h1 {
+        font-size: 1.8rem;
+        margin-bottom: 8px;
+        color: #1a202c;
+      }
+      p.subtitle {
+        color: #718096;
+        margin-bottom: 30px;
+      }
+      .upload-area {
+        border: 2px dashed #cbd5e0;
+        border-radius: 10px;
+        padding: 40px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.2s;
+      }
+      .upload-area:hover {
+        border-color: #4299e1;
+      }
+      #fileInput {
+        display: none;
+      }
+      .btn {
+        background: #4299e1;
+        color: white;
+        border: none;
+        padding: 12px 28px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        margin-top: 20px;
+        width: 100%;
+        transition: background 0.2s;
+      }
+      .btn:hover {
+        background: #2b6cb0;
+      }
+      .btn:disabled {
+        background: #a0aec0;
+        cursor: not-allowed;
+      }
+      .result-box {
+        margin-top: 24px;
+        background: #f7fafc;
+        border-radius: 10px;
+        padding: 20px;
+        border-left: 4px solid #4299e1;
+      }
+      .result-box h3 {
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #4299e1;
+      }
+      .result-box p {
+        line-height: 1.7;
+        white-space: pre-wrap;
+        color: #2d3748;
+      }
+      .error {
+        border-left-color: #fc8181;
+      }
+      .error h3 {
+        color: #e53e3e;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 0.8rem;
+        color: #718096;
+        margin-top: 10px;
+      }
+      .loader {
+        text-align: center;
+        padding: 20px;
+        color: #718096;
+      }
+      #preview {
+        max-width: 100%;
+        border-radius: 8px;
+        margin-top: 12px;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🔤 Text Simplifier</h1>
+      <p class="subtitle">
+        Upload an image — we'll extract and simplify the text using AI.
+      </p>
+
+      <div
+        class="upload-area"
+        id="dropArea"
+        onclick="document.getElementById('fileInput').click()"
+      >
+        <p>📁 Click to upload or drag & drop</p>
+        <p style="font-size: 0.85rem; color: #a0aec0; margin-top: 8px">
+          JPG, PNG up to 5MB
+        </p>
+        <img id="preview" />
+      </div>
+      <input type="file" id="fileInput" accept=".jpg,.jpeg,.png" />
+
+      <button class="btn" id="submitBtn" onclick="processImage()" disabled>
+        Process Image
+      </button>
+
+      <div id="output"></div>
+    </div>
+
+    <script>
+      const fileInput = document.getElementById("fileInput");
+      const submitBtn = document.getElementById("submitBtn");
+      const preview = document.getElementById("preview");
+
+      fileInput.addEventListener("change", () => {
+        const file = fileInput.files[0];
+        if (file) {
+          submitBtn.disabled = false;
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            preview.src = e.target.result;
+            preview.style.display = "block";
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      // Drag and drop support
+      const dropArea = document.getElementById("dropArea");
+      dropArea.addEventListener("dragover", (e) => e.preventDefault());
+      dropArea.addEventListener("drop", (e) => {
+        e.preventDefault();
+        fileInput.files = e.dataTransfer.files;
+        fileInput.dispatchEvent(new Event("change"));
+      });
+
+      async function processImage() {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const output = document.getElementById("output");
+        output.innerHTML =
+          '<div class="loader">⏳ Processing... this may take a few seconds.</div>';
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Processing...";
+
+        const formData = new FormData();
+        formData.append("image", file);
+
+        try {
+          const response = await fetch("/api/process", {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            output.innerHTML = `
+          <div class="result-box">
+            <h3>📄 Original Extracted Text</h3>
+            <p>${data.original_text}</p>
+          </div>
+          <div class="result-box" style="margin-top:16px; border-left-color:#68d391;">
+            <h3 style="color:#38a169;">✨ Simplified Text</h3>
+            <p>${data.paraphrased_text}</p>
+            <span class="badge">⏱ Processing time: ${data.processing_time}</span>
+          </div>
+        `;
+          } else {
+            output.innerHTML = `
+          <div class="result-box error">
+            <h3>❌ Error</h3>
+            <p>${data.error}</p>
+          </div>
+        `;
+          }
+        } catch (err) {
+          output.innerHTML = `
+        <div class="result-box error">
+          <h3>❌ Network Error</h3>
+          <p>Could not reach the server. Make sure the API is running.</p>
+        </div>
+      `;
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Process Image";
+        }
+      }
+    </script>
+  </body>
+</html>
