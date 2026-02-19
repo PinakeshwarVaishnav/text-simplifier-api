@@ -1,3 +1,9 @@
+---
+title: FastAPI OCR Backend
+sdk: docker
+app_port: 7860
+---
+
 # Text Simplifier API
 
 A FastAPI backend that extracts text from images using Tesseract OCR (local) and simplifies it using the Groq Cloud API.
