@@ -54,7 +54,7 @@ async def log_requests(request: Request, call_next):
 # -------------------------------------------------------------------
 # Health check endpoint
 # -------------------------------------------------------------------
-@app.post("/health", tags=["health"])
+@app.get("/health", tags=["health"])
 def health_check():
     return {"status": "ok", "message": "Text Simplifier API is running"}
 
